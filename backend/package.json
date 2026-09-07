@@ -1,0 +1,30 @@
+{
+  "name": "skillswap-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SkillSwap platform backend — peer-to-peer skill exchange API",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "db:migrate": "knex migrate:latest --knexfile knexfile.js",
+    "db:rollback": "knex migrate:rollback --knexfile knexfile.js",
+    "db:seed": "knex seed:run --knexfile knexfile.js",
+    "db:reset": "knex migrate:rollback --all --knexfile knexfile.js && knex migrate:latest --knexfile knexfile.js && knex seed:run --knexfile knexfile.js",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --forceExit --detectOpenHandles"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "knex": "^3.1.0",
+    "pg": "^8.16.0",
+    "uuid": "^11.1.0",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "jest": "^30.0.4",
+    "supertest": "^7.1.0"
+  }
+}

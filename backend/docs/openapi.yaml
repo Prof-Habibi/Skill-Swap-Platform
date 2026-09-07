@@ -1,0 +1,331 @@
+openapi: 3.0.3
+info:
+  title: SkillSwap API
+  version: 1.0.0
+  description: Peer-to-peer skill exchange platform backend API specification
+servers:
+  - url: http://localhost:3001/api/v1
+    description: Local development server
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service and database are healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: ok
+                      database:
+                        type: string
+                        example: connected
+                      timestamp:
+                        type: string
+                        format: date-time
+
+  /skills:
+    get:
+      summary: List skills
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of canonical skills
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSkillsResponse'
+
+  /skills/{id}:
+    get:
+      summary: Get skill by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Skill details
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /users/{id}:
+    get:
+      summary: Get user profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User profile details (without password hash)
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /users/{id}/skills:
+    get:
+      summary: Get user skills
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Skills grouped into can_teach and wants_to_learn
+
+  /users/{id}/matches:
+    get:
+      summary: Get reciprocal swap matches for user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Matching users and reciprocal skills
+
+  /swaps:
+    post:
+      summary: Create skill swap proposal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - requester_id
+                - recipient_id
+                - requester_skill_id
+                - recipient_skill_id
+              properties:
+                requester_id:
+                  type: string
+                  format: uuid
+                recipient_id:
+                  type: string
+                  format: uuid
+                requester_skill_id:
+                  type: string
+                  format: uuid
+                recipient_skill_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Swap created
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /swaps/{id}:
+    get:
+      summary: Get swap by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Swap details with participants and skills
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /projects:
+    get:
+      summary: List projects
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of projects
+    post:
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - owner_id
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                owner_id:
+                  type: string
+                  format: uuid
+                visibility:
+                  type: string
+                  enum: [PUBLIC, PRIVATE]
+      responses:
+        '201':
+          description: Project created
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /projects/{id}:
+    get:
+      summary: Get project by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Project details and members
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /classes:
+    get:
+      summary: List classes
+      responses:
+        '200':
+          description: List of classes
+
+  /classes/{id}:
+    get:
+      summary: Get class by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Class details and members
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /learning-sessions/{id}:
+    get:
+      summary: Get learning session by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session details and participants
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+components:
+  schemas:
+    PaginatedSkillsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skill'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+    Skill:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+    StandardError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+  responses:
+    NotFoundError:
+      description: Entity not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StandardError'
+    ValidationError:
+      description: Input validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StandardError'
